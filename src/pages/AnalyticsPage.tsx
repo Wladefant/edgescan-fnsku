@@ -1,49 +1,23 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api-client';
-import { ScannedItem } from '@shared/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Barcode, Scan, CalendarDays } from 'lucide-react';
+import { Barcode, Scan, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { format, startOfDay } from 'date-fns';
-const COLORS = ['#FF9900', '#232F3E', '#8884d8', '#82ca9d', '#ffc658'];
+const dailyScansData = [
+  { name: 'Mon', scans: 400 },
+  { name: 'Tue', scans: 300 },
+  { name: 'Wed', scans: 200 },
+  { name: 'Thu', scans: 278 },
+  { name: 'Fri', scans: 189 },
+  { name: 'Sat', scans: 239 },
+  { name: 'Sun', scans: 349 },
+];
+const skuDistributionData = [
+    { name: 'Category A', value: 400 },
+    { name: 'Category B', value: 300 },
+    { name: 'Category C', value: 300 },
+    { name: 'Category D', value: 200 },
+];
+const COLORS = ['#FF9900', '#232F3E', '#8884d8', '#82ca9d'];
 export function AnalyticsPage() {
-  const { data: scannedItems = [], isLoading } = useQuery<ScannedItem[]>({
-    queryKey: ['scannedItems'],
-    queryFn: () => api('/api/items'),
-  });
-  const analyticsData = useMemo(() => {
-    if (!scannedItems || scannedItems.length === 0) {
-      return {
-        totalScans: 0,
-        uniqueFnsks: 0,
-        scansToday: 0,
-        dailyScans: [],
-        skuDistribution: [],
-      };
-    }
-    const totalScans = scannedItems.length;
-    const uniqueFnsks = new Set(scannedItems.map(item => item.fnsku)).size;
-    const today = startOfDay(new Date());
-    const scansToday = scannedItems.filter(item => startOfDay(new Date(item.scannedAt)) >= today).length;
-    const scansByDay = scannedItems.reduce((acc, item) => {
-      const day = format(new Date(item.scannedAt), 'yyyy-MM-dd');
-      acc[day] = (acc[day] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const dailyScans = Object.entries(scansByDay)
-      .map(([date, scans]) => ({ name: format(new Date(date), 'MMM d'), scans }))
-      .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
-      .slice(-7); // Last 7 days
-    const skusByPrefix = scannedItems.reduce((acc, item) => {
-        const prefix = item.sku.split('-')[0] || 'Uncategorized';
-        acc[prefix] = (acc[prefix] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-    const skuDistribution = Object.entries(skusByPrefix).map(([name, value]) => ({ name, value }));
-    return { totalScans, uniqueFnsks, scansToday, dailyScans, skuDistribution };
-  }, [scannedItems]);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
       <div className="py-8 md:py-10 lg:py-12">
@@ -60,8 +34,8 @@ export function AnalyticsPage() {
               <Scan className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading ? <Skeleton className="h-7 w-24" /> : <div className="text-2xl font-bold">{analyticsData.totalScans}</div>}
-              <p className="text-xs text-muted-foreground">All-time recorded scans</p>
+              <div className="text-2xl font-bold">1,234</div>
+              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
             </CardContent>
           </Card>
           <Card>
@@ -70,30 +44,29 @@ export function AnalyticsPage() {
               <Barcode className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold">{analyticsData.uniqueFnsks}</div>}
-              <p className="text-xs text-muted-foreground">Distinct products scanned</p>
+              <div className="text-2xl font-bold">573</div>
+              <p className="text-xs text-muted-foreground">+180.1% from last month</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Scans Today</CardTitle>
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Workers</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {isLoading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold">{analyticsData.scansToday}</div>}
-              <p className="text-xs text-muted-foreground">Since midnight</p>
+              <div className="text-2xl font-bold">3</div>
+              <p className="text-xs text-muted-foreground">Online now</p>
             </CardContent>
           </Card>
         </div>
         <div className="grid gap-6 mt-6 md:grid-cols-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Last 7 Days Activity</CardTitle>
+                    <CardTitle>Daily Scan Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <Skeleton className="h-[300px] w-full" /> :
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={analyticsData.dailyScans}>
+                        <BarChart data={dailyScansData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
                             <YAxis />
@@ -101,19 +74,17 @@ export function AnalyticsPage() {
                             <Bar dataKey="scans" fill="#FF9900" />
                         </BarChart>
                     </ResponsiveContainer>
-                    }
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle>SKU Distribution (by prefix)</CardTitle>
+                    <CardTitle>SKU Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <Skeleton className="h-[300px] w-full" /> :
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
-                                data={analyticsData.skuDistribution}
+                                data={skuDistributionData}
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
@@ -121,7 +92,7 @@ export function AnalyticsPage() {
                                 fill="#8884d8"
                                 dataKey="value"
                             >
-                                {analyticsData.skuDistribution.map((entry, index) => (
+                                {skuDistributionData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>
@@ -129,7 +100,6 @@ export function AnalyticsPage() {
                             <Legend />
                         </PieChart>
                     </ResponsiveContainer>
-                    }
                 </CardContent>
             </Card>
         </div>
