@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { ScannedItem } from '@shared/types';
+import Papa from 'papaparse';
 import {
   Table,
   TableBody,
@@ -43,6 +44,28 @@ export function InventoryListPage() {
       item.fnsku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
+  const handleExport = () => {
+    if (filteredItems.length === 0) {
+      toast.warning('No items to export.');
+      return;
+    }
+    const dataToExport = filteredItems.map(item => ({
+      FNSKU: item.fnsku,
+      'Local SKU': item.sku,
+      'Scanned At': format(new Date(item.scannedAt), 'yyyy-MM-dd HH:mm:ss'),
+    }));
+    const csv = Papa.unparse(dataToExport);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
+    link.setAttribute('download', `edgescan_inventory_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV export started.');
+  };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
       <div className="py-8 md:py-10 lg:py-12">
@@ -63,7 +86,7 @@ export function InventoryListPage() {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" disabled>
+            <Button variant="outline" onClick={handleExport} disabled={filteredItems.length === 0}>
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>

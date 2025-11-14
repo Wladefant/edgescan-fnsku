@@ -85,7 +85,7 @@ export function ScannerPage() {
       const capabilities = track.getCapabilities() as any;
       if (capabilities.torch) {
         try {
-          await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
+          await track.applyConstraints({ advanced: [{ torch: !torchOn }] } as any);
           setTorchOn(!torchOn);
         } catch (error) {
           console.error('Error toggling torch:', error);
