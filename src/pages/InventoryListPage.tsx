@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useStore } from '@/lib/store';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api-client';
+import { ScannedItem } from '@shared/types';
 import {
   Table,
   TableBody,
@@ -10,24 +12,37 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Download, Search, Trash2 } from 'lucide-react';
+import { Download, Search, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 export function InventoryListPage() {
-  const scannedItems = useStore((state) => state.scannedItems);
-  const clearItems = useStore((state) => state.clearItems);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const { data: scannedItems = [], isLoading, error } = useQuery<ScannedItem[]>({
+    queryKey: ['scannedItems'],
+    queryFn: () => api('/api/items'),
+  });
+  const clearAllMutation = useMutation({
+    mutationFn: () => api('/api/items/delete-all', { method: 'POST' }),
+    onSuccess: () => {
+      toast.success('All items have been cleared.');
+      queryClient.invalidateQueries({ queryKey: ['scannedItems'] });
+    },
+    onError: (err) => {
+      toast.error(`Failed to clear items: ${err.message}`);
+    },
+  });
+  const handleClearAll = () => {
+    if (window.confirm('Are you sure you want to delete all scanned items? This action cannot be undone.')) {
+      clearAllMutation.mutate();
+    }
+  };
   const filteredItems = scannedItems.filter(
     (item) =>
       item.fnsku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to delete all scanned items? This action cannot be undone.')) {
-      clearItems();
-      toast.success('All items have been cleared.');
-    }
-  };
+  ).sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
       <div className="py-8 md:py-10 lg:py-12">
@@ -52,8 +67,16 @@ export function InventoryListPage() {
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
-            <Button variant="destructive" onClick={handleClearAll} disabled={scannedItems.length === 0}>
-              <Trash2 className="mr-2 h-4 w-4" />
+            <Button
+              variant="destructive"
+              onClick={handleClearAll}
+              disabled={scannedItems.length === 0 || clearAllMutation.isPending}
+            >
+              {clearAllMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
               Clear All
             </Button>
           </div>
@@ -68,7 +91,21 @@ export function InventoryListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.length > 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-4 w-48 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center text-red-500">
+                    Error loading data: {error.message}
+                  </TableCell>
+                </TableRow>
+              ) : filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono font-medium">{item.fnsku}</TableCell>

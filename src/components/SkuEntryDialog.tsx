@@ -12,17 +12,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStore } from '@/lib/store';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api-client';
+import { ScannedItem } from '@shared/types';
 export function SkuEntryDialog() {
+  const queryClient = useQueryClient();
   const activeFNSKU = useStore((state) => state.activeFNSKU);
   const isDialogOpen = useStore((state) => state.isDialogOpen);
   const setDialogOpen = useStore((state) => state.setDialogOpen);
-  const addItem = useStore((state) => state.addItem);
   const setActiveFNSKU = useStore((state) => state.setActiveFNSKU);
   const [sku, setSku] = useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const createItemMutation = useMutation({
+    mutationFn: (newItem: { fnsku: string; sku: string }) => 
+      api<ScannedItem>('/api/items', {
+        method: 'POST',
+        body: JSON.stringify(newItem),
+      }),
+    onSuccess: (data) => {
+      toast.success(`FNSKU ${data.fnsku} assigned to SKU ${data.sku}`);
+      queryClient.invalidateQueries({ queryKey: ['scannedItems'] });
+      handleClose();
+    },
+    onError: (error) => {
+      toast.error(`Failed to save SKU: ${error.message}`);
+    },
+  });
   useEffect(() => {
     if (isDialogOpen) {
-      // Autofocus input when dialog opens
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isDialogOpen]);
@@ -31,9 +48,7 @@ export function SkuEntryDialog() {
       toast.error('SKU cannot be empty.');
       return;
     }
-    addItem({ fnsku: activeFNSKU, sku: sku.trim() });
-    toast.success(`FNSKU ${activeFNSKU} assigned to SKU ${sku.trim()}`);
-    handleClose();
+    createItemMutation.mutate({ fnsku: activeFNSKU, sku: sku.trim() });
   };
   const handleClose = () => {
     setSku('');
@@ -68,6 +83,7 @@ export function SkuEntryDialog() {
               className="col-span-3 focus:ring-amazon-orange"
               placeholder="e.g., A1-B2-C3"
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              disabled={createItemMutation.isPending}
             />
           </div>
         </div>
@@ -76,8 +92,9 @@ export function SkuEntryDialog() {
             type="submit"
             onClick={handleSubmit}
             className="bg-amazon-orange text-amazon-blue hover:bg-opacity-90 focus:ring-amazon-orange"
+            disabled={createItemMutation.isPending}
           >
-            Save SKU
+            {createItemMutation.isPending ? 'Saving...' : 'Save SKU'}
           </Button>
         </DialogFooter>
       </DialogContent>
