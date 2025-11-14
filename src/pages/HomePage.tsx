@@ -25,8 +25,7 @@ export function HomePage() {
       <main>
         {renderActiveView()}
       </main>
-      {activeView !== 'scanner' && <BottomNav activeView={activeView} setActiveView={setActiveView} />}
-      {activeView === 'scanner' && <div className="fixed bottom-0 left-0 right-0 h-16 bg-amazon-blue"><BottomNav activeView={activeView} setActiveView={setActiveView} /></div>}
+      <BottomNav activeView={activeView} setActiveView={setActiveView} />
       <Toaster richColors position="top-center" />
     </div>
   );
