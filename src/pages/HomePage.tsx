@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BottomNav, AppView } from '@/components/BottomNav';
+import { BottomNav } from '@/components/BottomNav';
+import type { AppView } from '@/components/BottomNav';
 import { ScannerPage } from './ScannerPage';
 import { InventoryListPage } from './InventoryListPage';
 import { AnalyticsPage } from './AnalyticsPage';
