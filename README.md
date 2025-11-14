@@ -1,6 +1,6 @@
 # EdgeScan FNSKU
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Wladefant/edgescan-fnsku)
 
 A professional, mobile-first web application for rapid Amazon FNSKU barcode scanning and warehouse inventory management, optimized for speed and efficiency on the edge.
 
@@ -92,7 +92,7 @@ This application is designed to be deployed to Cloudflare's global network.
 
 Alternatively, you can deploy your own version of this project with a single click.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Wladefant/edgescan-fnsku)
 
 ## Project Structure
 
