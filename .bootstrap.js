@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add @zxing/library@^0.21.0",
     "bun add papaparse@^5.4.1",
-    "bun add -d @types/papaparse@^5.3.14"
+    "bun add -d @types/papaparse@^5.3.14",
+    "bun install @zxing/library"
 ];
     
     if (commands.length === 0) {
