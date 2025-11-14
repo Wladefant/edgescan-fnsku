@@ -77,7 +77,11 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [];
+    const commands = [
+    "bun add @zxing/library@^0.21.0",
+    "bun add papaparse@^5.4.1",
+    "bun add -d @types/papaparse@^5.3.14"
+];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
